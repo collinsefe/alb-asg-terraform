@@ -20,9 +20,16 @@ Ensure you have the following installed:
 ## File Structure
 ```
 .
-├── main.tf           # Terraform configuration for VPC, Security Group, ASG, etc.
-├── user-data.sh      # User data script for configuring Apache on EC2 instances
-├── README.md         # Documentation
+├── asg.tf           # Terraform configuration for Autoscaling Group.   
+├── alb.tf           # Terraform configuration for Application Load Balancer.
+├── vpc.tf           # Terraform configuration for VPC.
+├── sg.tf            # Terraform configuration for Security Group.
+├── s3.tf            # Terraform configuration for S3 buckets.
+├── key-pair.tf      # Terraform configuration for key-pair.
+├── backend.tf       # Terraform configuration for backend configuration.
+├── provider.tf      # Terraform configuration for provider configuration.
+├── user-data.sh     # User data script for configuring Apache on EC2 instances
+├── README.md        # Documentation
 ```
 
 ## Setup & Deployment
