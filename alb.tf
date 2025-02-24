@@ -31,8 +31,8 @@ resource "aws_lb_listener" "front_end" {
   load_balancer_arn = aws_lb.main.arn
   port              = "80"
   protocol          = "HTTP"
-#   ssl_policy        = "ELBSecurityPolicy-2016-08"
-#   certificate_arn   = "arn:aws:iam::123456789012:server-certificate/demo_cert_rab3wuqwgja25ct3n4jdj2tzu4"
+  #   ssl_policy        = "ELBSecurityPolicy-2016-08"
+  #   certificate_arn   = "arn:aws:iam::123456789012:server-certificate/demo_cert_rab3wuqwgja25ct3n4jdj2tzu4"
 
   default_action {
     type             = "forward"

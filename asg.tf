@@ -22,11 +22,11 @@ resource "aws_launch_template" "main" {
 
 # #auto scaling group
 resource "aws_autoscaling_group" "main" {
-  name = "mupando-terraform-asg"
+  name                = "mupando-terraform-asg"
   vpc_zone_identifier = [aws_subnet.public.id, aws_subnet.foo.id, aws_subnet.bar.id] #["subnet-12345678", "subnet-87654321"]
-  desired_capacity   = 0
-  max_size           = 6
-  min_size           = 0
+  desired_capacity    = 0
+  max_size            = 6
+  min_size            = 0
 
   launch_template {
     id      = aws_launch_template.main.id
