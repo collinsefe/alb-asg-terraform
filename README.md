@@ -1,28 +1,73 @@
-# Creating a small AWS environment consisting of EC2, EIP, EBS, VPC and private subnet with Terraform
+# Terraform AWS Auto Scaling Deployment
 
-## Introduction
+## Overview
+This Terraform project provisions an AWS environment including:
+- A **VPC** with a public subnet
+- An **Internet Gateway** for public access
+- A **Security Group** allowing HTTP (80) and SSH (22) traffic
+- A **Launch Template** defining EC2 instance configurations
+- An **Auto Scaling Group** for automatic scaling of EC2 instances
+- Scaling policies to automatically increase or decrease instances based on demand
+- A **User Data Script** that installs Apache and displays the EC2 instance's IP in `index.html`
 
-Another day at the office and another task from your colleagues. You have been asked to use Terraform in an AWS environment to create an EC2 instance.
+## Prerequisites
+Ensure you have the following installed:
+- [Terraform](https://www.terraform.io/downloads)
+- [AWS CLI](https://aws.amazon.com/cli/)
+- An **AWS account** with appropriate IAM permissions
+- An **SSH key pair** in AWS (update `key_name` in `main.tf` accordingly)
 
-## Problem Statement
+## File Structure
+```
+.
+├── main.tf           # Terraform configuration for VPC, Security Group, ASG, etc.
+├── user-data.sh      # User data script for configuring Apache on EC2 instances
+├── README.md         # Documentation
+```
 
-The requirements are as follows:
-* Create an EC2 instance with:  ++++++
-    * type: `t2.micro`,
-    * AMI: `ami-02f617729751b375a`,
-    * Availability zone: `eu-west-2`.
-* Create a VPC with:      +++++
-    * CIDR block of `10.0.0.0/16`.
-* Create a Subnet within that VPC with:  +++++
-    * CIDR block of `10.0.10.0/24`,
-    * Availability zone: `eu-west-2a`.
-* Within your VPC, create an EIP with a `private` address of:  +++++++
-    * `10.0.10.250`, ***
-    * attach this Elastic IP to your instance.
-* Create an EBS volume and attach it to the instance using:  ++++++++
-    * device name `/dev/sdc`,
-    * Availability zone: `eu-west-2a`. ***
-* Important: when it is possible, please use the `availability_zone` = `eu-west-2`. ***   ++++++
-* Your code does not use any existing modules and is only composed of plain resources provided by the official AWS Terraform provider.
+## Setup & Deployment
+1. **Clone the repository**
+   ```sh
+   git clone https://github.com/yourusername/terraform-aws-autoscaling.git
+   cd terraform-aws-autoscaling
+   ```
 
-# alb-asg-terraform
+2. **Initialize Terraform**
+   ```sh
+   terraform init
+   ```
+
+3. **Preview the changes**
+   ```sh
+   terraform plan
+   ```
+
+4. **Deploy the infrastructure**
+   ```sh
+   terraform apply -auto-approve
+   ```
+
+5. **Retrieve the Auto Scaling Group details**
+   ```sh
+   aws autoscaling describe-auto-scaling-groups --query 'AutoScalingGroups[*].Instances[*].InstanceId'
+   ```
+
+## Scaling Policies
+The Auto Scaling Group is configured with two policies:
+- **Scale Up**: Adds an instance when demand increases.
+- **Scale Down**: Removes an instance when demand decreases.
+
+## Cleanup
+To remove all resources created by Terraform:
+```sh
+terraform destroy -auto-approve
+```
+
+## Notes
+- Update the **AMI ID** in `main.tf` to match your AWS region.
+- Modify the **availability zone** if needed.
+- Ensure your AWS credentials are configured (`aws configure`).
+
+## License
+This project is open-source and available under the MIT License.
+
