@@ -18,7 +18,7 @@ Run everything from the repo root — `asg.tf` reads `user-data.sh` via a **rela
 different working directory breaks `plan`/`apply`.
 
 ```sh
-terraform init -backend-config=backend.hcl   # needs credentials for the S3 backend bucket
+terraform init -backend-config=backend.hcl
 terraform fmt         # the tree is currently fmt-clean; keep it that way
 terraform validate
 terraform plan
@@ -30,6 +30,11 @@ terraform destroy
 `backend "s3" {}` block because backend configuration is resolved before variables exist and
 therefore cannot be interpolated; a plain `terraform init` will prompt interactively for the
 bucket and key instead.
+
+Deploys go to account 493245399435 via the `default` AWS profile. The other local profiles
+(`collinsefe-admin`, `collins-workload`) are different accounts — don't set `AWS_PROFILE` to them.
+The state bucket is shared with other projects (`ec2-scheduler/`, `terminate-untagged-instances/`);
+only touch `demo/`.
 
 There are no tests, no linter config, and no CI. `terraform validate` + `terraform plan` are the
 only feedback loop. `validate` requires `init` to have succeeded, which requires backend access —
@@ -52,8 +57,8 @@ AWS-facing names carry a `mupando-` prefix.
   Never put credentials in it. `terraform.tfvars.example` mirrors it; keep the two in sync when
   adding a variable.
 - `backend.tf` + `backend.hcl` — empty `backend "s3" {}` block plus its partial configuration:
-  bucket `mupandoprojects-terraformstate-bucket`, key `demo/infra.tfstate`, encrypted, locked via
-  the DynamoDB table `mupando-terraform-state-lock`. **That table must exist before
+  bucket `terraform-state-493245399435` (account 493245399435, the `default` AWS profile), key `demo/infra.tfstate`, encrypted, locked via
+  the DynamoDB table `terraform-sept-2026`. **That table must exist before
   `terraform init`** — it is deliberately not managed here (the backend needs it before there is
   any state to manage it in). Create it with a `LockID` string partition key.
 - `vpc.tf` — VPC `192.168.0.0/16` plus three /18 subnets, one per AZ, named `aws_subnet.public`
