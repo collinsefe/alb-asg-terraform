@@ -1,6 +1,8 @@
 **/.terraform/*
 **/tfplan.*
 **/tfplan*
+# saved plan files (terraform plan -out) contain every value Terraform read
+*.out
 *.tfstate*
 
 ### *** required entries below ***
