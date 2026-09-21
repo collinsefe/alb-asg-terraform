@@ -2,7 +2,6 @@
 **/tfplan.*
 **/tfplan*
 *.tfstate*
-*.tfvars
 
 ### *** required entries below ***
 ###

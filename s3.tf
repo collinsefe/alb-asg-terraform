@@ -1,13 +1,13 @@
 # # This file contains the configuration for creating EC2 instances
 
 resource "aws_s3_bucket" "foo" {
-  bucket_prefix = "mupandoprojectbucket-"
-  force_destroy = true
+  bucket_prefix = var.app_bucket_prefix
+  force_destroy = var.bucket_force_destroy
 }
 
 resource "aws_s3_bucket" "logs" {
-  bucket_prefix = "mupandoprojectslogs-bucket-"
-  force_destroy = true
+  bucket_prefix = var.logs_bucket_prefix
+  force_destroy = var.bucket_force_destroy
 }
 
 
@@ -26,4 +26,3 @@ resource "aws_s3_bucket_public_access_block" "logging" {
   block_public_policy     = true
   block_public_acls       = true
 }
-
