@@ -1,7 +1,5 @@
 terraform {
-  backend "s3" {
-    bucket = "mupandoprojects-terraformstate-bucket"
-    key    = "demo/infra.tfstate"
-    region = "eu-west-2"
-  }
+  # Values supplied by backend.hcl:
+  #   terraform init -backend-config=backend.hcl
+  backend "s3" {}
 }

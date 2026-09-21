@@ -1,20 +1,45 @@
 #launch template
 resource "aws_launch_template" "main" {
-  name_prefix   = "mupando-"
-  image_id      = "ami-00710ab5544b60cf7"
-  instance_type = "t2.micro"
-  key_name      = "web-app-key"
-  user_data     = base64encode(file("user-data.sh"))
+  name_prefix   = "${var.name_prefix}-"
+  image_id      = var.ami_id
+  instance_type = var.instance_type
+  key_name      = aws_key_pair.this.key_name
+  user_data     = filebase64("${path.module}/user-data.sh")
+
+  iam_instance_profile {
+    name = aws_iam_instance_profile.instance.name
+  }
+
+  # Require IMDSv2 so a server-side request forgery bug in the app cannot read
+  # the instance role's credentials.
+  metadata_options {
+    http_endpoint               = "enabled"
+    http_tokens                 = "required"
+    http_put_response_hop_limit = 1
+  }
+
+  # Encrypt the root volume. root_device_name must match the AMI's root device:
+  # "/dev/xvda" for Amazon Linux, "/dev/sda1" for Ubuntu.
+  block_device_mappings {
+    device_name = var.root_device_name
+
+    ebs {
+      volume_size           = var.root_volume_size
+      volume_type           = var.root_volume_type
+      encrypted             = true
+      delete_on_termination = true
+    }
+  }
 
   network_interfaces {
     associate_public_ip_address = true
-    security_groups             = [aws_security_group.main.id]
+    security_groups             = [aws_security_group.instance.id]
   }
 
   tag_specifications {
     resource_type = "instance"
     tags = {
-      Name = "cloud-web-server"
+      Name = var.instance_name
     }
   }
 
@@ -22,62 +47,50 @@ resource "aws_launch_template" "main" {
 
 # #auto scaling group
 resource "aws_autoscaling_group" "main" {
-  name                = "mupando-terraform-asg"
-  vpc_zone_identifier = [aws_subnet.public.id, aws_subnet.foo.id, aws_subnet.bar.id] #["subnet-12345678", "subnet-87654321"]
-  desired_capacity    = 0
-  max_size            = 6
-  min_size            = 0
+  name                = "${var.name_prefix}-terraform-asg"
+  vpc_zone_identifier = [aws_subnet.public.id, aws_subnet.foo.id, aws_subnet.bar.id]
+  desired_capacity    = var.asg_desired_capacity
+  max_size            = var.asg_max_size
+  min_size            = var.asg_min_size
+
+  # Replace an instance whose Apache is dead, not just one whose kernel has
+  # stopped answering. The grace period covers the user-data install.
+  health_check_type         = "ELB"
+  health_check_grace_period = var.health_check_grace_period
 
   launch_template {
-    id      = aws_launch_template.main.id
-    version = "$Latest"
+    id = aws_launch_template.main.id
+    # Pinning the resolved version (rather than "$Latest") is what makes a
+    # launch template edit show up as a diff on this resource, which is what
+    # actually fires the instance refresh below.
+    version = aws_launch_template.main.latest_version
+  }
+
+  # Roll the fleet onto the new launch template instead of leaving running
+  # instances on the old one.
+  instance_refresh {
+    strategy = "Rolling"
+
+    preferences {
+      min_healthy_percentage = var.instance_refresh_min_healthy_percentage
+      instance_warmup        = var.instance_refresh_warmup
+    }
   }
 }
 
-
-
-resource "aws_autoscaling_policy" "scale_up" {
-  name                   = "scale-up"
-  scaling_adjustment     = 1
-  adjustment_type        = "ChangeInCapacity"
-  cooldown               = 60
+# Target tracking replaces the old pair of simple scale-up/scale-down policies
+# and their CloudWatch alarms: AWS manages the alarms, and it will not thrash
+# between the two thresholds the way a 60s cooldown did.
+resource "aws_autoscaling_policy" "cpu" {
+  name                   = "cpu-target-tracking"
   autoscaling_group_name = aws_autoscaling_group.main.name
-}
+  policy_type            = "TargetTrackingScaling"
 
-resource "aws_autoscaling_policy" "scale_down" {
-  name                   = "scale-down"
-  autoscaling_group_name = aws_autoscaling_group.main.name
-  adjustment_type        = "ChangeInCapacity"
-  scaling_adjustment     = -1
-  cooldown               = 60
-}
+  target_tracking_configuration {
+    predefined_metric_specification {
+      predefined_metric_type = "ASGAverageCPUUtilization"
+    }
 
-resource "aws_cloudwatch_metric_alarm" "cpu_high" {
-  alarm_name          = "cpu-high"
-  comparison_operator = "GreaterThanThreshold"
-  evaluation_periods  = 2
-  metric_name         = "CPUUtilization"
-  namespace           = "AWS/EC2"
-  period              = 60
-  statistic           = "Average"
-  threshold           = 70
-  alarm_actions       = [aws_autoscaling_policy.scale_up.arn]
-  dimensions = {
-    AutoScalingGroupName = aws_autoscaling_group.main.name
-  }
-}
-
-resource "aws_cloudwatch_metric_alarm" "cpu_low" {
-  alarm_name          = "cpu-low"
-  comparison_operator = "LessThanThreshold"
-  evaluation_periods  = 2
-  metric_name         = "CPUUtilization"
-  namespace           = "AWS/EC2"
-  period              = 60
-  statistic           = "Average"
-  threshold           = 30
-  alarm_actions       = [aws_autoscaling_policy.scale_down.arn]
-  dimensions = {
-    AutoScalingGroupName = aws_autoscaling_group.main.name
+    target_value = var.cpu_target_value
   }
 }

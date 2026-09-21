@@ -15,7 +15,7 @@ Ensure you have the following installed:
 - [Terraform](https://www.terraform.io/downloads)
 - [AWS CLI](https://aws.amazon.com/cli/)
 - An **AWS account** with appropriate IAM permissions
-- An **SSH key pair** in AWS (update `key_name` in `main.tf` accordingly)
+- An **SSH public key** to set as `ssh_public_key` in `terraform.tfvars`
 
 ## File Structure
 ```
@@ -39,9 +39,10 @@ Ensure you have the following installed:
    cd terraform-aws-autoscaling
    ```
 
-2. **Initialize Terraform**
+2. **Configure and initialize Terraform**
    ```sh
-   terraform init
+   cp terraform.tfvars.example terraform.tfvars   # then edit to taste
+   terraform init -backend-config=backend.hcl
    ```
 
 3. **Preview the changes**
@@ -71,8 +72,8 @@ terraform destroy -auto-approve
 ```
 
 ## Notes
-- Update the **AMI ID** in `main.tf` to match your AWS region.
-- Modify the **availability zone** if needed.
+- Update `ami_id` in `terraform.tfvars` to match your AWS region.
+- Modify `subnets` in `terraform.tfvars` if you need different AZs or CIDRs.
 - Ensure your AWS credentials are configured (`aws configure`).
 
 ## License
