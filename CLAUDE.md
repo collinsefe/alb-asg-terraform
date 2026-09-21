@@ -6,7 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 A single flat Terraform **root module** (no child modules, no `main.tf`) that deploys an
 ALB + Auto Scaling Group web stack in `eu-west-2`. It is a learning/demo project. Configuration
-lives in `variables.tf` (defaults) and `terraform.tfvars` (overrides); there is no `outputs.tf`.
+lives in `variables.tf` (defaults) and `terraform.tfvars` (overrides); `output.tf` (singular)
+exposes the ALB URL, resource IDs, and ready-to-run CLI commands — `terraform output` after apply.
 
 This directory is its own git repository (`github.com/collinsefe/alb-asg-terraform`). It lives
 inside the larger `aws-devops-repo` notes repo but is not tracked by it — commit and push from
@@ -93,8 +94,6 @@ mismatched key pair name, zero desired capacity) are fixed. What is still rough:
 - **`var.ami_id` is a required input** rather than a lookup, so it is region-locked and ages out.
   Replace it with the AL2023 SSM parameter when convenient. `var.root_device_name` must be kept
   consistent with whatever AMI is chosen.
-- **No `outputs.tf`.** The ALB DNS name is not an output, so you still have to look it up with
-  `aws elbv2 describe-load-balancers` or the console.
 - **The three AZs and subnets are three copy-pasted resources** driven by keys `a`/`b`/`c` of
   `var.subnets`, rather than a single `for_each`. Collapsing them would change resource addresses
   and require `terraform state mv`.
